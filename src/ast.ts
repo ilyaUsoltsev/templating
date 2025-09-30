@@ -17,7 +17,7 @@ export type HtmlTagStmt = {
 
 export type MustacheStmt = {
   type: 'MustacheStmt';
-  original: string;
+  variable: string;
 };
 
 export type Stmt = ProgramStmt | HtmlTagStmt | MustacheStmt;

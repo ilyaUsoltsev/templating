@@ -84,6 +84,10 @@ export class Scanner extends ErrorReporter {
         this.addToken(TOKEN_TYPE.SLASH);
         break;
 
+      case '=':
+        this.addToken(TOKEN_TYPE.EQUAL);
+        break;
+
       case '"':
         this.string();
         break;
