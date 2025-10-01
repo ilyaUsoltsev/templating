@@ -33,17 +33,43 @@ class Parser {
   private getStatement(): Stmt {
     if (this.match(TOKEN_TYPE.MUSTASHES_OPEN)) {
       return this.mustachesStatement();
-    } else {
-      this.advance();
     }
+
+    if (this.match(TOKEN_TYPE.LESS)) {
+      return this.tagStatement();
+    }
+
+    if (this.match(TOKEN_TYPE.STRING)) {
+      return this.stringStatement();
+    }
+
+    if (
+      this.match(TOKEN_TYPE.IDENTIFIER, TOKEN_TYPE.EQUAL, TOKEN_TYPE.STRING)
+    ) {
+      console.log('attribute detected');
+      return this.attributeStatement();
+    }
+
+    this.advance();
   }
 
   private match(...types: Token['type'][]): boolean {
-    for (const type of types) {
-      if (this.check(type)) {
+    let counter = 0;
+    for (let i = 0; i < types.length; i++) {
+      if (this.check(types[i])) {
         this.advance();
-        return true;
+        counter++;
+      } else {
+        break;
       }
+    }
+
+    if (counter === types.length) {
+      return true;
+    }
+
+    for (let i = 0; i < counter; i++) {
+      this.goBack();
     }
 
     return false;
@@ -52,6 +78,10 @@ class Parser {
   check(type: Token['type']): boolean {
     if (this.isAtEnd()) return false;
     return this.peek().type == type;
+  }
+
+  goBack() {
+    if (this.current > 0) this.current--;
   }
 
   advance(): Token {
@@ -83,6 +113,70 @@ class Parser {
     return {
       type: 'MustacheStmt',
       variable: variableToken.lexeme,
+    };
+  }
+
+  private tagStatement(): Stmt {
+    const identifierToken = this.consume(
+      TOKEN_TYPE.IDENTIFIER,
+      "Expect tag name after '<'."
+    );
+
+    const statements: Stmt[] = [];
+
+    while (!this.check(TOKEN_TYPE.GREATER) && !this.check(TOKEN_TYPE.EOF)) {
+      const statement = this.getStatement();
+      if (statement) {
+        statements.push(statement);
+      }
+    }
+
+    this.consume(TOKEN_TYPE.GREATER, "Expect '>' after tag name.");
+
+    return {
+      type: 'HtmlTagStmt',
+      tag: identifierToken.lexeme,
+      attributes: statements,
+    };
+  }
+
+  private stringStatement(): Stmt {
+    const stringToken = this.previous();
+    this.advance();
+    return {
+      type: 'LiteralExpr',
+      value: stringToken.literal,
+    };
+  }
+
+  private identifierStatement(): Stmt {
+    const identifier = this.consume(
+      TOKEN_TYPE.IDENTIFIER,
+      `Expect identifier. Not ${this.peek().type}`
+    );
+
+    return {
+      type: 'LiteralExpr',
+      value: identifier.lexeme,
+    };
+  }
+
+  private attributeStatement(): Stmt {
+    this.goBack();
+    this.goBack();
+    this.goBack();
+    // we are at IDENTIFIER
+    const left = this.consume(
+      TOKEN_TYPE.IDENTIFIER,
+      'Expect identifier at attribute statement start.'
+    );
+
+    this.consume(TOKEN_TYPE.EQUAL, "Expect '=' after attribute name.");
+    const right = this.consume(TOKEN_TYPE.STRING, "Expect string after '='.");
+    return {
+      type: 'AttributeStmt',
+      left: { type: 'LiteralExpr', value: left.lexeme },
+      right: { type: 'LiteralExpr', value: right.literal },
     };
   }
 }

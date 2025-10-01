@@ -8,12 +8,11 @@ const fileContent = fs.readFileSync(filePath, 'utf8');
 
 const scanner = new Scanner(fileContent);
 const tokens = scanner.scanTokens();
-const parser = new Parser(tokens);
-const statements = parser.parse(tokens);
-
 for (const token of tokens) {
   console.log(token.toString());
 }
+const parser = new Parser(tokens);
+const statements = parser.parse(tokens);
 
 console.log('Parsed Tokens:');
 

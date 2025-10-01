@@ -74,10 +74,10 @@ export class Scanner extends ErrorReporter {
         break;
 
       case '<':
-        this.addToken(TOKEN_TYPE.TAG_OPEN);
+        this.addToken(this.match('/') ? TOKEN_TYPE.TAG_CLOSE : TOKEN_TYPE.LESS);
         break;
       case '>':
-        this.addToken(TOKEN_TYPE.TAG_CLOSE);
+        this.addToken(TOKEN_TYPE.GREATER);
         break;
 
       case '/':

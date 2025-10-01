@@ -1,7 +1,12 @@
-export type LiteralExpr = { type: 'LiteralExpr'; value: any }; // Number, string, boolean
-export type AttributeExpr = { type: 'Attribute'; name: string; value: Expr[] };
+export type LiteralExpr = { type: 'LiteralExpr'; value: any };
 
-export type Expr = LiteralExpr | AttributeExpr;
+export type StringExpr = { type: 'StringExpr'; children: Stmt[] };
+
+export type AttributeStmt = {
+  type: 'AttributeStmt';
+  left: LiteralExpr;
+  right: Stmt;
+};
 
 export type ProgramStmt = {
   type: 'ProgramStmt';
@@ -11,8 +16,8 @@ export type ProgramStmt = {
 export type HtmlTagStmt = {
   type: 'HtmlTagStmt';
   tag: string;
-  attributes: AttributeExpr[];
-  children: Stmt[];
+  attributes?: Stmt[];
+  children?: Stmt[];
 };
 
 export type MustacheStmt = {
@@ -20,4 +25,9 @@ export type MustacheStmt = {
   variable: string;
 };
 
-export type Stmt = ProgramStmt | HtmlTagStmt | MustacheStmt;
+export type Stmt =
+  | ProgramStmt
+  | HtmlTagStmt
+  | MustacheStmt
+  | LiteralExpr
+  | AttributeStmt;

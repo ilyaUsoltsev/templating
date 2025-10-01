@@ -5,8 +5,9 @@ export const TOKEN_TYPE = {
   MUSTASHES_CLOSE: 'MUSTASHES_CLOSE', // }}
   BLOCK_OPEN: 'BLOCK_OPEN', // {{#
   BLOCK_CLOSE: 'BLOCK_CLOSE', // {{/
-  TAG_OPEN: 'TAG_OPEN', // <
-  TAG_CLOSE: 'TAG_CLOSE', // >
+  LESS: 'LESS', // <
+  GREATER: 'GREATER', // >
+  TAG_CLOSE: 'TAG_CLOSE', // </
   SLASH: 'SLASH', // /
   IDENTIFIER: 'IDENTIFIER', // variable names, function names, attributes
   STRING: 'STRING', // "string"
