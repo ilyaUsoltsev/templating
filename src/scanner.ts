@@ -89,7 +89,8 @@ export class Scanner extends ErrorReporter {
         break;
 
       case '"':
-        this.string();
+        this.addToken(TOKEN_TYPE.STRING);
+        // this.string();
         break;
       case '\n':
         this.line++;

@@ -46,8 +46,11 @@ class Parser {
     if (
       this.match(TOKEN_TYPE.IDENTIFIER, TOKEN_TYPE.EQUAL, TOKEN_TYPE.STRING)
     ) {
-      console.log('attribute detected');
       return this.attributeStatement();
+    }
+
+    if (this.match(TOKEN_TYPE.IDENTIFIER)) {
+      return this.identifierStatement();
     }
 
     this.advance();
@@ -117,7 +120,7 @@ class Parser {
   }
 
   private tagStatement(): Stmt {
-    const identifierToken = this.consume(
+    const tagToken = this.consume(
       TOKEN_TYPE.IDENTIFIER,
       "Expect tag name after '<'."
     );
@@ -133,27 +136,52 @@ class Parser {
 
     this.consume(TOKEN_TYPE.GREATER, "Expect '>' after tag name.");
 
+    const children: Stmt[] = [];
+    while (!this.check(TOKEN_TYPE.TAG_CLOSE) && !this.check(TOKEN_TYPE.EOF)) {
+      const statement = this.getStatement();
+      if (statement) {
+        children.push(statement);
+      }
+    }
+
+    this.consume(TOKEN_TYPE.TAG_CLOSE, "Expect '</' before closing tag name.");
+    this.consume(
+      TOKEN_TYPE.IDENTIFIER,
+      'Expect tag name after </ in closing tag.'
+    );
+    this.consume(TOKEN_TYPE.GREATER, "Expect '>' after closing tag name.");
+
     return {
       type: 'HtmlTagStmt',
-      tag: identifierToken.lexeme,
+      tag: tagToken.lexeme,
       attributes: statements,
+      children: children,
     };
   }
 
   private stringStatement(): Stmt {
-    const stringToken = this.previous();
-    this.advance();
+    const statements: Stmt[] = [];
+
+    while (!this.check(TOKEN_TYPE.STRING) && !this.check(TOKEN_TYPE.EOF)) {
+      const statement = this.getStatement();
+      if (statement) {
+        statements.push(statement);
+      }
+    }
+
+    this.consume(
+      TOKEN_TYPE.STRING,
+      "Expect '\"' in the end of string statement."
+    );
+
     return {
-      type: 'LiteralExpr',
-      value: stringToken.literal,
+      type: 'StringStmt',
+      children: statements,
     };
   }
 
   private identifierStatement(): Stmt {
-    const identifier = this.consume(
-      TOKEN_TYPE.IDENTIFIER,
-      `Expect identifier. Not ${this.peek().type}`
-    );
+    const identifier = this.previous();
 
     return {
       type: 'LiteralExpr',
@@ -172,11 +200,12 @@ class Parser {
     );
 
     this.consume(TOKEN_TYPE.EQUAL, "Expect '=' after attribute name.");
-    const right = this.consume(TOKEN_TYPE.STRING, "Expect string after '='.");
+    this.consume(TOKEN_TYPE.STRING, "Expect '\"' before attribute value.");
+    const right = this.stringStatement();
     return {
       type: 'AttributeStmt',
       left: { type: 'LiteralExpr', value: left.lexeme },
-      right: { type: 'LiteralExpr', value: right.literal },
+      right: right,
     };
   }
 }

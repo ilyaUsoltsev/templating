@@ -1,6 +1,6 @@
 export type LiteralExpr = { type: 'LiteralExpr'; value: any };
 
-export type StringExpr = { type: 'StringExpr'; children: Stmt[] };
+export type StringStmt = { type: 'StringStmt'; children: Stmt[] };
 
 export type AttributeStmt = {
   type: 'AttributeStmt';
@@ -30,4 +30,5 @@ export type Stmt =
   | HtmlTagStmt
   | MustacheStmt
   | LiteralExpr
-  | AttributeStmt;
+  | AttributeStmt
+  | StringStmt;
