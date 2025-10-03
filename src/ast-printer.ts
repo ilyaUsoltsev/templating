@@ -8,7 +8,7 @@ import {
 } from './ast';
 
 interface Visitor {
-  visitLiteralExpr(stmt: LiteralStmt): string;
+  visitLiteralStmt(stmt: LiteralStmt): string;
   visitHtmlTagStmt(stmt: HtmlTagStmt): string;
   visitMustacheStmt(stmt: MustacheStmt): string;
   visitAttributeStmt(stmt: AttributeStmt): string;
@@ -17,12 +17,14 @@ interface Visitor {
 
 class AstPrinter implements Visitor {
   htmlDocument: string;
+  ctx: any;
 
   constructor() {
     this.htmlDocument = '';
   }
 
-  print(statements: Stmt[]): string {
+  print(statements: Stmt[], ctx?: any): string {
+    this.ctx = ctx;
     for (const stmt of statements) {
       this.htmlDocument += this.printStmt(stmt);
     }
@@ -32,7 +34,7 @@ class AstPrinter implements Visitor {
   printStmt(stmt: Stmt): string {
     switch (stmt.type) {
       case 'LiteralStmt':
-        return this.visitLiteralExpr(stmt);
+        return this.visitLiteralStmt(stmt);
       case 'HtmlTagStmt':
         return this.visitHtmlTagStmt(stmt);
       case 'MustacheStmt':
@@ -46,11 +48,18 @@ class AstPrinter implements Visitor {
     }
   }
 
-  visitLiteralExpr(stmt: LiteralStmt): string {
+  visitLiteralStmt(stmt: LiteralStmt): string {
     return stmt.value;
   }
+
   visitHtmlTagStmt(stmt: HtmlTagStmt): string {
-    let result = `<${stmt.tag} `;
+    let result = `<${stmt.tag}`;
+
+    // Add space between a tag and attributes if there are any
+    if (stmt.attributes.length !== 0) {
+      result += ' ';
+    }
+
     for (const attribute of stmt.attributes) {
       result += this.printStmt(attribute);
     }
@@ -62,14 +71,26 @@ class AstPrinter implements Visitor {
     result += `</${stmt.tag}>`;
     return result;
   }
+
   visitMustacheStmt(stmt: MustacheStmt): string {
-    return 'MustacheStmt';
+    return `${this.ctx[stmt.variable] ?? ''}`;
   }
+
   visitAttributeStmt(stmt: AttributeStmt): string {
-    return 'AttributeStmt';
+    let result = this.printStmt(stmt.left);
+    result += '=';
+    result += `"${this.printStmt(stmt.right)}" `;
+    return result;
   }
+
   visitStringStmt(stmt: StringStmt): string {
-    return 'StringStmt';
+    let result = '';
+
+    for (const child of stmt.children) {
+      result += this.printStmt(child);
+    }
+
+    return result;
   }
 }
 

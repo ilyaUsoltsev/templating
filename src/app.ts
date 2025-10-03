@@ -15,7 +15,11 @@ for (const token of tokens) {
 const parser = new Parser(tokens);
 const statements = parser.parse(tokens);
 const ast = new AstPrinter();
-const printedAst = ast.print(statements);
+const printedAst = ast.print(statements, {
+  userId: 'user123',
+  greetingClass: 'grueziClass',
+  name: 'Peter',
+});
 
 console.log('---------------------------');
 console.log(JSON.stringify(statements, null, 2));
