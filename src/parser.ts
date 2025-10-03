@@ -207,7 +207,7 @@ class Parser {
       return {
         type: 'AttributeStmt',
         left: { type: 'LiteralStmt', value: left.lexeme },
-        right: { type: 'MustacheStmt', variable: identifierToken.lexeme },
+        right: { type: 'LiteralStmt', value: identifierToken.lexeme },
       };
     }
   }

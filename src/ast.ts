@@ -11,7 +11,7 @@ export type PartialStmt = {
 export type AttributeStmt = {
   type: 'AttributeStmt';
   left: LiteralStmt;
-  right: StringStmt | MustacheStmt;
+  right: StringStmt | LiteralStmt;
 };
 
 export type IfStmt = {

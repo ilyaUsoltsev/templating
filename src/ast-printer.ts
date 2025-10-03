@@ -67,8 +67,8 @@ class AstPrinter implements Visitor {
       if (attr.type === 'AttributeStmt') {
         const key = attr.left.value;
         const value =
-          attr.right.type === 'MustacheStmt'
-            ? this.ctx[attr.right.variable]
+          attr.right.type === 'LiteralStmt'
+            ? this.ctx[attr.right.value]
             : this.printStmt(attr.right);
         partialCtx[key] = value;
       }
