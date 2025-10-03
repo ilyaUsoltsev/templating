@@ -2,7 +2,7 @@
   "name": "templating",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "build": "tsc && cp src/*.handlebars dist/",
     "start": "npm run build && node dist/app.js"

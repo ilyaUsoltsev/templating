@@ -53,7 +53,7 @@ export class Scanner extends ErrorReporter {
     return true;
   }
 
-  scanToken(withWhitespace = false) {
+  scanToken() {
     const c = this.advance();
     switch (c) {
       case '{':
@@ -99,9 +99,7 @@ export class Scanner extends ErrorReporter {
         break;
 
       case ' ':
-        if (withWhitespace) {
-          this.addToken(TOKEN_TYPE.WHITESPACE);
-        }
+        this.addToken(TOKEN_TYPE.WHITESPACE);
         break;
       case '\r':
       case '\t':
@@ -152,7 +150,7 @@ export class Scanner extends ErrorReporter {
         this.line++;
       }
       this.start = this.current;
-      this.scanToken(true);
+      this.scanToken();
     }
 
     if (this.isAtEnd()) {

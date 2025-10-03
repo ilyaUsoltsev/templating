@@ -55,11 +55,6 @@ class AstPrinter implements Visitor {
   visitHtmlTagStmt(stmt: HtmlTagStmt): string {
     let result = `<${stmt.tag}`;
 
-    // Add space between a tag and attributes if there are any
-    if (stmt.attributes.length !== 0) {
-      result += ' ';
-    }
-
     for (const attribute of stmt.attributes) {
       result += this.printStmt(attribute);
     }
@@ -79,7 +74,7 @@ class AstPrinter implements Visitor {
   visitAttributeStmt(stmt: AttributeStmt): string {
     let result = this.printStmt(stmt.left);
     result += '=';
-    result += `"${this.printStmt(stmt.right)}" `;
+    result += `"${this.printStmt(stmt.right)}"`;
     return result;
   }
 
