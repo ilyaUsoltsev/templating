@@ -3,8 +3,6 @@ export const TOKEN_TYPE = {
   CURLY_CLOSE: 'CURLY_CLOSE', // }
   MUSTASHES_OPEN: 'MUSTASHES_OPEN', // {{
   MUSTASHES_CLOSE: 'MUSTASHES_CLOSE', // }}
-  BLOCK_OPEN: 'BLOCK_OPEN', // {{#
-  BLOCK_CLOSE: 'BLOCK_CLOSE', // {{/
   LESS: 'LESS', // <
   GREATER: 'GREATER', // >
   TAG_CLOSE: 'TAG_CLOSE', // </
@@ -15,6 +13,7 @@ export const TOKEN_TYPE = {
   NUMBER: 'NUMBER', // 123, 45.67
   WHITESPACE: 'WHITESPACE', // space, tab, newline
   NEWLINE: 'NEWLINE', // \n`
+  HASH: 'HASH', // #
   EOF: 'EOF', // end of file
 };
 

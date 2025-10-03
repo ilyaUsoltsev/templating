@@ -1,6 +1,6 @@
-import { MustacheStmt, Stmt } from './ast';
+import { IfStmt, MustacheStmt, Stmt } from './ast';
 import { Token } from './token';
-import { TOKEN_TYPE } from './token-types';
+import { KEYWORDS, TOKEN_TYPE } from './token-types';
 
 class Parser {
   tokens: Token[];
@@ -31,8 +31,14 @@ class Parser {
   }
 
   private getStatement(): Stmt {
-    if (this.match(TOKEN_TYPE.MUSTASHES_OPEN)) {
-      return this.mustachesStatement();
+    if (this.match(TOKEN_TYPE.MUSTASHES_OPEN, TOKEN_TYPE.HASH, KEYWORDS.if)) {
+      return this.ifStatement();
+    }
+
+    if (
+      this.match(TOKEN_TYPE.IDENTIFIER, TOKEN_TYPE.EQUAL, TOKEN_TYPE.STRING)
+    ) {
+      return this.attributeStatement();
     }
 
     if (this.match(TOKEN_TYPE.LESS)) {
@@ -43,10 +49,8 @@ class Parser {
       return this.stringStatement();
     }
 
-    if (
-      this.match(TOKEN_TYPE.IDENTIFIER, TOKEN_TYPE.EQUAL, TOKEN_TYPE.STRING)
-    ) {
-      return this.attributeStatement();
+    if (this.match(TOKEN_TYPE.MUSTASHES_OPEN)) {
+      return this.mustachesStatement();
     }
 
     if (
@@ -109,10 +113,12 @@ class Parser {
   }
 
   private mustachesStatement(): MustacheStmt {
+    console.log(this.peek());
     const variableToken = this.consume(
       TOKEN_TYPE.IDENTIFIER,
       "Expect variable name after '{{'."
     );
+
     this.consume(
       TOKEN_TYPE.MUSTASHES_CLOSE,
       "Expect '}}' after variable name."
@@ -210,6 +216,74 @@ class Parser {
       type: 'AttributeStmt',
       left: { type: 'LiteralStmt', value: left.lexeme },
       right: right,
+    };
+  }
+
+  private ifStatement(): Stmt {
+    this.consume(TOKEN_TYPE.WHITESPACE, 'Expect WHITESPACE after {{#if ');
+    const condition = this.consume(
+      TOKEN_TYPE.IDENTIFIER,
+      'Expecting condition variable'
+    );
+    this.consume(
+      TOKEN_TYPE.MUSTASHES_CLOSE,
+      'Expect }} at the end of #if statement'
+    );
+
+    const trueStatements = [];
+    while (
+      !this.check(TOKEN_TYPE.MUSTASHES_OPEN) &&
+      !this.check(TOKEN_TYPE.EOF)
+    ) {
+      const statement = this.getStatement();
+      if (statement) {
+        trueStatements.push(statement);
+      }
+    }
+
+    this.consume(
+      TOKEN_TYPE.MUSTASHES_OPEN,
+      'Expect closing or else block in if block'
+    );
+
+    const withElseBlock = this.check(KEYWORDS.else);
+
+    const falseStatements = [];
+    if (withElseBlock) {
+      this.consume(KEYWORDS.else, 'Expect else keyword');
+      this.consume(
+        TOKEN_TYPE.MUSTASHES_CLOSE,
+        'Expect }} at the end of else statement'
+      );
+
+      while (
+        !this.check(TOKEN_TYPE.MUSTASHES_OPEN) &&
+        !this.check(TOKEN_TYPE.EOF)
+      ) {
+        const statement = this.getStatement();
+        if (statement) {
+          falseStatements.push(statement);
+        }
+      }
+
+      this.consume(
+        TOKEN_TYPE.MUSTASHES_OPEN,
+        'Expect closing block in if block'
+      );
+    }
+
+    this.consume(TOKEN_TYPE.SLASH, "Expect '/' in closing if block");
+    this.consume(KEYWORDS.if, 'Expect if keyword in closing if block');
+    this.consume(
+      TOKEN_TYPE.MUSTASHES_CLOSE,
+      'Expect }} at the end of closing if statement'
+    );
+
+    return {
+      type: 'IfStmt',
+      condition: condition.lexeme,
+      thenBranch: trueStatements,
+      elseBranch: falseStatements,
     };
   }
 }

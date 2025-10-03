@@ -1,6 +1,7 @@
 import {
   AttributeStmt,
   HtmlTagStmt,
+  IfStmt,
   LiteralStmt,
   MustacheStmt,
   Stmt,
@@ -43,6 +44,8 @@ class AstPrinter implements Visitor {
         return this.visitAttributeStmt(stmt);
       case 'StringStmt':
         return this.visitStringStmt(stmt);
+      case 'IfStmt':
+        return this.visitIfStmt(stmt);
       default:
       // throw new Error(`Unknown statement type: ${stmt.type}`);
     }
@@ -85,6 +88,21 @@ class AstPrinter implements Visitor {
       result += this.printStmt(child);
     }
 
+    return result;
+  }
+
+  visitIfStmt(ifStmt: IfStmt): string {
+    let result = '';
+    const condition = this.ctx[ifStmt.condition];
+    if (condition) {
+      for (const stmt of ifStmt.thenBranch) {
+        result += this.printStmt(stmt);
+      }
+    } else {
+      for (const stmt of ifStmt.elseBranch) {
+        result += this.printStmt(stmt);
+      }
+    }
     return result;
   }
 }

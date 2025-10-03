@@ -19,6 +19,7 @@ const printedAst = ast.print(statements, {
   userId: 'user123',
   greetingClass: 'grueziClass',
   name: 'Peter',
+  isMember: true,
 });
 
 console.log('---------------------------');

@@ -41,31 +41,13 @@ export class Scanner extends ErrorReporter {
     return true;
   }
 
-  isBlockClose() {
-    if (this.peek() !== '{') {
-      return false;
-    }
-    const isBlockClose = this.match('{') && this.match('/');
-    if (!isBlockClose) {
-      this.current -= 1;
-      return false;
-    }
-    return true;
-  }
-
   scanToken() {
     const c = this.advance();
     switch (c) {
       case '{':
-        if (this.isBlockOpen()) {
-          this.addToken(TOKEN_TYPE.BLOCK_OPEN);
-        } else if (this.isBlockClose()) {
-          this.addToken(TOKEN_TYPE.BLOCK_CLOSE);
-        } else {
-          this.addToken(
-            this.match('{') ? TOKEN_TYPE.MUSTASHES_OPEN : TOKEN_TYPE.CURLY_OPEN
-          );
-        }
+        this.addToken(
+          this.match('{') ? TOKEN_TYPE.MUSTASHES_OPEN : TOKEN_TYPE.CURLY_OPEN
+        );
         break;
       case '}':
         this.addToken(
@@ -91,8 +73,12 @@ export class Scanner extends ErrorReporter {
       case '"':
         this.addToken(TOKEN_TYPE.STRING);
         this.string();
-
         break;
+
+      case '#':
+        this.addToken(TOKEN_TYPE.HASH);
+        break;
+
       case '\n':
         this.addToken(TOKEN_TYPE.NEWLINE);
         this.line++;

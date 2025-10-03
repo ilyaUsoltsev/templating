@@ -8,6 +8,13 @@ export type AttributeStmt = {
   right: Stmt;
 };
 
+export type IfStmt = {
+  type: 'IfStmt';
+  condition: string; // variable name after {{#if condition
+  thenBranch: Stmt[];
+  elseBranch?: Stmt[];
+};
+
 export type ProgramStmt = {
   type: 'ProgramStmt';
   children: Stmt[];
@@ -31,4 +38,5 @@ export type Stmt =
   | MustacheStmt
   | LiteralStmt
   | AttributeStmt
-  | StringStmt;
+  | StringStmt
+  | IfStmt;

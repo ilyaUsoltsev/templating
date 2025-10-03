@@ -1,4 +1,9 @@
-<span class="p-2 greeting-primary-{{greetingClass}}" data-user="{{userId}}">
+<span class="p-2 greeting-primary-{{greetingClass}}" data-user="{{#if isMember}}userMember123{{else}}notMember1232{{/if}}">
     <span>Inner span</span>
     Hello, {{name}}!
+    {{#if isMember}}
+        <span>Member</span>
+    {{else}}
+        <span>ELSE member</span>
+    {{/if}}
 </span>
