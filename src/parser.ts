@@ -51,7 +51,8 @@ class Parser {
 
     if (
       this.match(TOKEN_TYPE.IDENTIFIER) ||
-      this.match(TOKEN_TYPE.WHITESPACE)
+      this.match(TOKEN_TYPE.WHITESPACE) ||
+      this.match(TOKEN_TYPE.NEWLINE)
     ) {
       return this.identifierStatement();
     }

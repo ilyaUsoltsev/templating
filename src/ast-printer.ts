@@ -47,7 +47,7 @@ class AstPrinter implements Visitor {
   }
 
   visitLiteralExpr(stmt: LiteralStmt): string {
-    return 'Literal STMT';
+    return stmt.value;
   }
   visitHtmlTagStmt(stmt: HtmlTagStmt): string {
     let result = `<${stmt.tag} `;

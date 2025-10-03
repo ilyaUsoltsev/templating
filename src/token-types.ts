@@ -14,6 +14,7 @@ export const TOKEN_TYPE = {
   EQUAL: 'EQUAL', // =
   NUMBER: 'NUMBER', // 123, 45.67
   WHITESPACE: 'WHITESPACE', // space, tab, newline
+  NEWLINE: 'NEWLINE', // \n`
   EOF: 'EOF', // end of file
 };
 
