@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import path from 'path';
 import { Scanner } from './scanner';
 import Parser from './parser';
+import AstPrinter from './ast-printer';
 
 const filePath = path.join(__dirname, 'test.handlebars');
 const fileContent = fs.readFileSync(filePath, 'utf8');
@@ -13,8 +14,10 @@ for (const token of tokens) {
 }
 const parser = new Parser(tokens);
 const statements = parser.parse(tokens);
+const ast = new AstPrinter();
+const printedAst = ast.print(statements);
 
-console.log('Parsed Tokens:');
-
-console.log('Parsed Statements:');
+console.log('---------------------------');
 console.log(JSON.stringify(statements, null, 2));
+console.log('---------------------------');
+console.log(printedAst);

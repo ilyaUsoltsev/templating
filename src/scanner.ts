@@ -53,7 +53,7 @@ export class Scanner extends ErrorReporter {
     return true;
   }
 
-  scanToken() {
+  scanToken(withWhitespace = false) {
     const c = this.advance();
     switch (c) {
       case '{':
@@ -90,13 +90,18 @@ export class Scanner extends ErrorReporter {
 
       case '"':
         this.addToken(TOKEN_TYPE.STRING);
-        // this.string();
+        this.string();
+
         break;
       case '\n':
         this.line++;
         break;
 
       case ' ':
+        if (withWhitespace) {
+          this.addToken(TOKEN_TYPE.WHITESPACE);
+        }
+        break;
       case '\r':
       case '\t':
         // Ignore whitespace.
@@ -142,8 +147,11 @@ export class Scanner extends ErrorReporter {
 
   string() {
     while (this.peek() !== '"' && !this.isAtEnd()) {
-      if (this.peek() === '\n') this.line++;
-      this.advance();
+      if (this.peek() === '\n') {
+        this.line++;
+      }
+      this.start = this.current;
+      this.scanToken(true);
     }
 
     if (this.isAtEnd()) {
@@ -151,10 +159,13 @@ export class Scanner extends ErrorReporter {
       return;
     }
 
-    this.advance();
+    const closingString = this.advance();
+    if (closingString !== '"') {
+      this.error(this.line, 'Unterminated string.');
+      return;
+    }
 
-    const value = this.source.slice(this.start + 1, this.current - 1);
-    this.addToken(TOKEN_TYPE.STRING, value);
+    this.addToken(TOKEN_TYPE.STRING);
   }
 
   isDigit(c) {

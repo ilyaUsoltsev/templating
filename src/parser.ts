@@ -49,7 +49,10 @@ class Parser {
       return this.attributeStatement();
     }
 
-    if (this.match(TOKEN_TYPE.IDENTIFIER)) {
+    if (
+      this.match(TOKEN_TYPE.IDENTIFIER) ||
+      this.match(TOKEN_TYPE.WHITESPACE)
+    ) {
       return this.identifierStatement();
     }
 
@@ -184,7 +187,7 @@ class Parser {
     const identifier = this.previous();
 
     return {
-      type: 'LiteralExpr',
+      type: 'LiteralStmt',
       value: identifier.lexeme,
     };
   }
@@ -204,7 +207,7 @@ class Parser {
     const right = this.stringStatement();
     return {
       type: 'AttributeStmt',
-      left: { type: 'LiteralExpr', value: left.lexeme },
+      left: { type: 'LiteralStmt', value: left.lexeme },
       right: right,
     };
   }
