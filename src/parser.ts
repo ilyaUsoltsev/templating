@@ -1,4 +1,4 @@
-import { IfStmt, MustacheStmt, Stmt } from './ast';
+import { IfStmt, MustacheStmt, PartialStmt, Stmt, StringStmt } from './ast';
 import { Token } from './token';
 import { KEYWORDS, TOKEN_TYPE } from './token-types';
 
@@ -30,13 +30,18 @@ class Parser {
     throw new Error(message);
   }
 
-  private getStatement(): Stmt {
+  private getStatement(currentBlock?: 'tag' | 'partial'): Stmt {
     if (this.match(TOKEN_TYPE.MUSTASHES_OPEN, TOKEN_TYPE.HASH, KEYWORDS.if)) {
       return this.ifStatement();
     }
 
+    if (this.match(TOKEN_TYPE.MUSTASHES_OPEN, TOKEN_TYPE.GREATER)) {
+      return this.partialStatement();
+    }
+
     if (
-      this.match(TOKEN_TYPE.IDENTIFIER, TOKEN_TYPE.EQUAL, TOKEN_TYPE.STRING)
+      (currentBlock === 'tag' || currentBlock === 'partial') &&
+      this.match(TOKEN_TYPE.IDENTIFIER, TOKEN_TYPE.EQUAL)
     ) {
       return this.attributeStatement();
     }
@@ -53,63 +58,39 @@ class Parser {
       return this.mustachesStatement();
     }
 
-    if (
-      this.match(TOKEN_TYPE.IDENTIFIER) ||
-      this.match(TOKEN_TYPE.WHITESPACE) ||
-      this.match(TOKEN_TYPE.NEWLINE)
-    ) {
-      return this.identifierStatement();
-    }
-
     this.advance();
+    return this.identifierStatement();
   }
 
-  private match(...types: Token['type'][]): boolean {
-    let counter = 0;
-    for (let i = 0; i < types.length; i++) {
-      if (this.check(types[i])) {
-        this.advance();
-        counter++;
-      } else {
-        break;
+  private partialStatement(): PartialStmt {
+    this.consume(TOKEN_TYPE.WHITESPACE, 'Expect WHITESPACE after {{> ');
+    const partial = this.consume(
+      TOKEN_TYPE.IDENTIFIER,
+      'Expecting condition variable'
+    );
+
+    const attributeStmts = [];
+
+    while (
+      !this.check(TOKEN_TYPE.MUSTASHES_CLOSE) &&
+      !this.check(TOKEN_TYPE.EOF)
+    ) {
+      const statement = this.getStatement('partial');
+      if (statement) {
+        attributeStmts.push(statement);
       }
     }
 
-    if (counter === types.length) {
-      return true;
-    }
+    this.consume(
+      TOKEN_TYPE.MUSTASHES_CLOSE,
+      'Expecting }} at the end of a partial expression'
+    );
 
-    for (let i = 0; i < counter; i++) {
-      this.goBack();
-    }
-
-    return false;
-  }
-
-  check(type: Token['type']): boolean {
-    if (this.isAtEnd()) return false;
-    return this.peek().type == type;
-  }
-
-  goBack() {
-    if (this.current > 0) this.current--;
-  }
-
-  advance(): Token {
-    if (!this.isAtEnd()) this.current++;
-    return this.previous();
-  }
-
-  isAtEnd() {
-    return this.peek().type == TOKEN_TYPE.EOF;
-  }
-
-  peek(): Token {
-    return this.tokens[this.current];
-  }
-
-  previous(): Token {
-    return this.tokens[this.current - 1];
+    return {
+      type: 'PartialStmt',
+      name: partial.lexeme,
+      attributes: attributeStmts,
+    };
   }
 
   private mustachesStatement(): MustacheStmt {
@@ -138,7 +119,7 @@ class Parser {
     const statements: Stmt[] = [];
 
     while (!this.check(TOKEN_TYPE.GREATER) && !this.check(TOKEN_TYPE.EOF)) {
-      const statement = this.getStatement();
+      const statement = this.getStatement('tag');
       if (statement) {
         statements.push(statement);
       }
@@ -169,7 +150,7 @@ class Parser {
     };
   }
 
-  private stringStatement(): Stmt {
+  private stringStatement(): StringStmt {
     const statements: Stmt[] = [];
 
     while (!this.check(TOKEN_TYPE.STRING) && !this.check(TOKEN_TYPE.EOF)) {
@@ -202,7 +183,6 @@ class Parser {
   private attributeStatement(): Stmt {
     this.goBack();
     this.goBack();
-    this.goBack();
     // we are at IDENTIFIER
     const left = this.consume(
       TOKEN_TYPE.IDENTIFIER,
@@ -210,13 +190,26 @@ class Parser {
     );
 
     this.consume(TOKEN_TYPE.EQUAL, "Expect '=' after attribute name.");
-    this.consume(TOKEN_TYPE.STRING, "Expect '\"' before attribute value.");
-    const right = this.stringStatement();
-    return {
-      type: 'AttributeStmt',
-      left: { type: 'LiteralStmt', value: left.lexeme },
-      right: right,
-    };
+    const isStringExpression = this.check(TOKEN_TYPE.STRING);
+    if (isStringExpression) {
+      this.consume(TOKEN_TYPE.STRING, "Expect '\"' before attribute value.");
+      const right = this.stringStatement();
+      return {
+        type: 'AttributeStmt',
+        left: { type: 'LiteralStmt', value: left.lexeme },
+        right: right,
+      };
+    } else {
+      const identifierToken = this.consume(
+        TOKEN_TYPE.IDENTIFIER,
+        "Expect identifier after '='."
+      );
+      return {
+        type: 'AttributeStmt',
+        left: { type: 'LiteralStmt', value: left.lexeme },
+        right: { type: 'MustacheStmt', variable: identifierToken.lexeme },
+      };
+    }
   }
 
   private ifStatement(): Stmt {
@@ -285,6 +278,54 @@ class Parser {
       thenBranch: trueStatements,
       elseBranch: falseStatements,
     };
+  }
+
+  match(...types: Token['type'][]): boolean {
+    let counter = 0;
+    for (let i = 0; i < types.length; i++) {
+      if (this.check(types[i])) {
+        this.advance();
+        counter++;
+      } else {
+        break;
+      }
+    }
+
+    if (counter === types.length) {
+      return true;
+    }
+
+    for (let i = 0; i < counter; i++) {
+      this.goBack();
+    }
+
+    return false;
+  }
+
+  check(type: Token['type']): boolean {
+    if (this.isAtEnd()) return false;
+    return this.peek().type == type;
+  }
+
+  goBack() {
+    if (this.current > 0) this.current--;
+  }
+
+  advance(): Token {
+    if (!this.isAtEnd()) this.current++;
+    return this.previous();
+  }
+
+  isAtEnd() {
+    return this.peek().type == TOKEN_TYPE.EOF;
+  }
+
+  peek(): Token {
+    return this.tokens[this.current];
+  }
+
+  previous(): Token {
+    return this.tokens[this.current - 1];
   }
 }
 

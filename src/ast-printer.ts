@@ -4,6 +4,7 @@ import {
   IfStmt,
   LiteralStmt,
   MustacheStmt,
+  PartialStmt,
   Stmt,
   StringStmt,
 } from './ast';
@@ -19,9 +20,11 @@ interface Visitor {
 class AstPrinter implements Visitor {
   htmlDocument: string;
   ctx: any;
+  partials: { [key: string]: Stmt[] };
 
-  constructor() {
+  constructor(partials: { [key: string]: Stmt[] }) {
     this.htmlDocument = '';
+    this.partials = partials;
   }
 
   print(statements: Stmt[], ctx?: any): string {
@@ -46,6 +49,8 @@ class AstPrinter implements Visitor {
         return this.visitStringStmt(stmt);
       case 'IfStmt':
         return this.visitIfStmt(stmt);
+      case 'PartialStmt':
+        return this.visitPartialStmt(stmt);
       default:
       // throw new Error(`Unknown statement type: ${stmt.type}`);
     }
@@ -53,6 +58,23 @@ class AstPrinter implements Visitor {
 
   visitLiteralStmt(stmt: LiteralStmt): string {
     return stmt.value;
+  }
+
+  visitPartialStmt(stmt: PartialStmt): string {
+    const partialName = stmt.name;
+    const partialCtx: any = { ...this.ctx };
+    for (const attr of stmt.attributes ?? []) {
+      if (attr.type === 'AttributeStmt') {
+        const key = attr.left.value;
+        const value =
+          attr.right.type === 'MustacheStmt'
+            ? this.ctx[attr.right.variable]
+            : this.printStmt(attr.right);
+        partialCtx[key] = value;
+      }
+    }
+
+    return this.print(this.partials[partialName] ?? [], partialCtx);
   }
 
   visitHtmlTagStmt(stmt: HtmlTagStmt): string {

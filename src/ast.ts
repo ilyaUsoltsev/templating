@@ -2,10 +2,16 @@ export type LiteralStmt = { type: 'LiteralStmt'; value: any };
 
 export type StringStmt = { type: 'StringStmt'; children: Stmt[] };
 
+export type PartialStmt = {
+  type: 'PartialStmt';
+  name: string;
+  attributes?: AttributeStmt[];
+};
+
 export type AttributeStmt = {
   type: 'AttributeStmt';
   left: LiteralStmt;
-  right: Stmt;
+  right: StringStmt | MustacheStmt;
 };
 
 export type IfStmt = {
@@ -39,4 +45,5 @@ export type Stmt =
   | LiteralStmt
   | AttributeStmt
   | StringStmt
-  | IfStmt;
+  | IfStmt
+  | PartialStmt;
