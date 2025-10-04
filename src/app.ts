@@ -1,5 +1,3 @@
-import * as fs from 'fs';
-import path from 'path';
 import { Scanner } from './scanner';
 import Parser from './parser';
 import AstPrinter from './ast-printer';

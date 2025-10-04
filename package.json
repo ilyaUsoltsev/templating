@@ -4,8 +4,9 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "build": "tsc && cp src/*.handlebars dist/",
-    "start": "npm run build && node dist/app.js"
+    "build": "tsc",
+    "build:dev": "tsc && cp src/*.handlebars dist/",
+    "start": "npm run build:dev && node dist/app.js"
   },
   "keywords": [],
   "author": "",
