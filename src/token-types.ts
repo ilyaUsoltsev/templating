@@ -21,4 +21,5 @@ export const TOKEN_TYPE = {
 export const KEYWORDS: { [key: string]: string } = {
   if: 'IF',
   else: 'ELSE',
+  each: 'EACH',
 };

@@ -5,9 +5,11 @@
         <p class="{{greetingClass}}">Hello, {{name}}! Please sign up.</p>
     {{/if}}
     <h1>Title</h1>
+    {{#each messages m}}
+        <p>{{m.text}} {{m.user}}</p>
+    {{/each}}
     <p>This is some content inside the container.</p>
     {{#> Dialog title="{{#if isMember}} Dialog Title of Member {{else}} Sign Up {{/if}}" }}
         <p>This is the dialog content.</p>
     {{/ Dialog }}
 {{/ Container }}
-

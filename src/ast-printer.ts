@@ -1,5 +1,6 @@
 import {
   AttributeStmt,
+  EachStmt,
   HtmlTagStmt,
   IfStmt,
   LiteralStmt,
@@ -51,6 +52,8 @@ class AstPrinter implements Visitor {
         return this.visitIfStmt(stmt);
       case 'PartialStmt':
         return this.visitPartialStmt(stmt);
+      case 'EachStmt':
+        return this.visitEachStmt(stmt);
       default:
       // throw new Error(`Unknown statement type: ${stmt.type}`);
     }
@@ -58,6 +61,17 @@ class AstPrinter implements Visitor {
 
   visitLiteralStmt(stmt: LiteralStmt): string {
     return stmt.value;
+  }
+
+  visitEachStmt(stmt: EachStmt): string {
+    const iteratorKey = stmt.name;
+    const arrayToIterate = this.ctx[iteratorKey];
+    let result = '';
+    for (const item of arrayToIterate) {
+      result += this.print(stmt.children, { ...this.ctx, [stmt.alias]: item });
+    }
+
+    return result;
   }
 
   visitPartialStmt(stmt: PartialStmt): string {
@@ -101,7 +115,15 @@ class AstPrinter implements Visitor {
   }
 
   visitMustacheStmt(stmt: MustacheStmt): string {
-    return `${this.ctx[stmt.variable] ?? ''}`;
+    const nestedKeys = stmt.variable.split('.');
+    let value = this.ctx;
+    for (const key of nestedKeys) {
+      value = value?.[key];
+      if (value === undefined) {
+        return '';
+      }
+    }
+    return value;
   }
 
   visitAttributeStmt(stmt: AttributeStmt): string {

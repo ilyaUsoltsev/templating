@@ -4,6 +4,13 @@ export type StringStmt = { type: 'StringStmt'; children: Stmt[] };
 
 export type ChildrenStmt = { type: 'ChildrenStmt'; children: Stmt[] };
 
+export type EachStmt = {
+  type: 'EachStmt';
+  name: string;
+  alias: string;
+  children: Stmt[];
+};
+
 export type PartialStmt = {
   type: 'PartialStmt';
   name: string;
@@ -57,4 +64,5 @@ export type Stmt =
   | IfStmt
   | PartialStmt
   | SlotStmt
-  | ChildrenStmt;
+  | ChildrenStmt
+  | EachStmt;

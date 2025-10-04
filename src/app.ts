@@ -42,9 +42,13 @@ const printedAst = ast.print(statements, {
   greetingClass: 'grueziClass',
   name: 'Peter',
   isMember: true,
+  messages: [
+    { text: 'Text1', user: 'User1' },
+    { text: 'Text2', user: 'User2' },
+  ],
 });
 
-// console.log('---------------------------');
-// console.log(JSON.stringify(statements, null, 2));
+console.log('---------------------------');
+console.log(JSON.stringify(statements, null, 2));
 console.log('---------------------------');
 console.log(printedAst);

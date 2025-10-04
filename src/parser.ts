@@ -1,5 +1,6 @@
 import {
   AttributeStmt,
+  EachStmt,
   IfStmt,
   MustacheStmt,
   PartialStmt,
@@ -42,6 +43,10 @@ class Parser {
       this.match(TOKEN_TYPE.MUSTASHES_OPEN, TOKEN_TYPE.HASH, TOKEN_TYPE.GREATER)
     ) {
       return this.slotStatement();
+    }
+
+    if (this.match(TOKEN_TYPE.MUSTASHES_OPEN, TOKEN_TYPE.HASH, KEYWORDS.each)) {
+      return this.eachStatement();
     }
 
     if (this.match(TOKEN_TYPE.MUSTASHES_OPEN, TOKEN_TYPE.HASH, KEYWORDS.if)) {
@@ -280,6 +285,48 @@ class Parser {
         right: { type: 'LiteralStmt', value: identifierToken.lexeme },
       };
     }
+  }
+
+  private eachStatement(): EachStmt {
+    this.consume(TOKEN_TYPE.WHITESPACE, 'Expect WHITESPACE after {{#each ');
+    const iterator = this.consume(
+      TOKEN_TYPE.IDENTIFIER,
+      'Expect iterator Identifier in each stmt'
+    );
+    this.consume(
+      TOKEN_TYPE.WHITESPACE,
+      'Expect WHITESPACE after iterator in each stmt'
+    );
+    const alias = this.consume(
+      TOKEN_TYPE.IDENTIFIER,
+      'Expect alias for item in the list'
+    );
+    this.consume(TOKEN_TYPE.MUSTASHES_CLOSE, 'Expect }} in each opening stmt');
+
+    const children = [];
+    while (
+      !this.check(TOKEN_TYPE.BLOCK_CLOSE, KEYWORDS.each) &&
+      !this.check(TOKEN_TYPE.EOF)
+    ) {
+      const statement = this.getStatement();
+      if (statement) {
+        children.push(statement);
+      }
+    }
+
+    this.consume(TOKEN_TYPE.BLOCK_CLOSE, 'Expect {{ to close each block');
+    this.consume(KEYWORDS.each, 'Expect each keyword in closing each block');
+    this.consume(
+      TOKEN_TYPE.MUSTASHES_CLOSE,
+      'Expect }} at the end of closing each statement'
+    );
+
+    return {
+      type: 'EachStmt',
+      name: iterator.lexeme,
+      alias: alias.lexeme,
+      children: children,
+    };
   }
 
   private ifStatement(): Stmt {
