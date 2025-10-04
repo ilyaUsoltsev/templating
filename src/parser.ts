@@ -100,14 +100,14 @@ class Parser {
     );
 
     const children: Stmt[] = [];
-    while (!this.check(TOKEN_TYPE.SLOT_CLOSE) && !this.check(TOKEN_TYPE.EOF)) {
+    while (!this.check(TOKEN_TYPE.BLOCK_CLOSE) && !this.check(TOKEN_TYPE.EOF)) {
       const statement = this.getStatement();
       if (statement) {
         children.push(statement);
       }
     }
 
-    this.consume(TOKEN_TYPE.SLOT_CLOSE, 'Expecting {{/ to close slot block');
+    this.consume(TOKEN_TYPE.BLOCK_CLOSE, 'Expecting {{/ to close slot block');
     this.consume(TOKEN_TYPE.WHITESPACE, 'Expect WHITESPACE after {{/ ');
     this.consume(
       TOKEN_TYPE.IDENTIFIER,
@@ -320,7 +320,7 @@ class Parser {
       );
 
       while (
-        !this.check(TOKEN_TYPE.MUSTASHES_OPEN) &&
+        !this.check(TOKEN_TYPE.BLOCK_CLOSE, KEYWORDS.if) &&
         !this.check(TOKEN_TYPE.EOF)
       ) {
         const statement = this.getStatement();
@@ -329,13 +329,9 @@ class Parser {
         }
       }
 
-      this.consume(
-        TOKEN_TYPE.MUSTASHES_OPEN,
-        'Expect closing block in if block'
-      );
+      this.consume(TOKEN_TYPE.BLOCK_CLOSE, 'Expect closing block in if block');
     }
 
-    this.consume(TOKEN_TYPE.SLASH, "Expect '/' in closing if block");
     this.consume(KEYWORDS.if, 'Expect if keyword in closing if block');
     this.consume(
       TOKEN_TYPE.MUSTASHES_CLOSE,
@@ -372,9 +368,12 @@ class Parser {
     return false;
   }
 
-  check(type: Token['type']): boolean {
-    if (this.isAtEnd()) return false;
-    return this.peek().type == type;
+  check(...types: Token['type'][]): boolean {
+    if (this.isAtEnd()) {
+      return false;
+    }
+
+    return types.every((type, idx) => this.peek(idx).type === type);
   }
 
   goBack() {
@@ -390,8 +389,8 @@ class Parser {
     return this.peek().type == TOKEN_TYPE.EOF;
   }
 
-  peek(): Token {
-    return this.tokens[this.current];
+  peek(increment = 0): Token {
+    return this.tokens[this.current + increment];
   }
 
   previous(): Token {

@@ -1,7 +1,12 @@
 {{#> Container }}
+    {{#if isMember}}
+        <p class="{{greetingClass}}">Welcome back, {{name}}!</p>
+    {{else}}
+        <p class="{{greetingClass}}">Hello, {{name}}! Please sign up.</p>
+    {{/if}}
     <h1>Title</h1>
     <p>This is some content inside the container.</p>
-    {{#> Dialog title="Dialog Title" }}
+    {{#> Dialog title="{{#if isMember}} Dialog Title of Member {{else}} Sign Up {{/if}}" }}
         <p>This is the dialog content.</p>
     {{/ Dialog }}
 {{/ Container }}

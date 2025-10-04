@@ -48,7 +48,7 @@ export class Scanner extends ErrorReporter {
         this.addToken(
           this.match('{')
             ? this.match('/')
-              ? TOKEN_TYPE.SLOT_CLOSE
+              ? TOKEN_TYPE.BLOCK_CLOSE
               : TOKEN_TYPE.MUSTASHES_OPEN
             : TOKEN_TYPE.CURLY_OPEN
         );
