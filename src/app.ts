@@ -5,24 +5,29 @@ import Parser from './parser';
 import AstPrinter from './ast-printer';
 import { Stmt } from './ast';
 
-const partials: { Button: Stmt[] } = { Button: [] };
+const partials = {} as { [key: string]: Stmt[] };
 
-const buttonPath = path.join(__dirname, 'button.handlebars');
-const buttonFileContent = fs.readFileSync(buttonPath, 'utf8');
-const buttonScanner = new Scanner(buttonFileContent);
-const buttonTokens = buttonScanner.scanTokens();
-const buttonParser = new Parser(buttonTokens);
-const buttonStatements = buttonParser.parse(buttonTokens);
-partials['Button'] = buttonStatements;
+const partialFileNames = ['button.handlebars', 'withbutton.handlebars'];
+
+for (const fileName of partialFileNames) {
+  const partialPath = path.join(__dirname, fileName);
+  const partialFileContent = fs.readFileSync(partialPath, 'utf8');
+  const partialScanner = new Scanner(partialFileContent);
+  const partialTokens = partialScanner.scanTokens();
+  const partialParser = new Parser(partialTokens);
+  const partialStatements = partialParser.parse(partialTokens);
+  const key = path.basename(fileName, path.extname(fileName));
+  partials[key] = partialStatements;
+}
 
 const filePath = path.join(__dirname, 'test.handlebars');
 const fileContent = fs.readFileSync(filePath, 'utf8');
 
 const scanner = new Scanner(fileContent);
 const tokens = scanner.scanTokens();
-for (const token of tokens) {
-  console.log(token.toString());
-}
+// for (const token of tokens) {
+//   console.log(token.toString());
+// }
 
 const parser = new Parser(tokens);
 const statements = parser.parse(tokens);
@@ -35,7 +40,7 @@ const printedAst = ast.print(statements, {
   isMember: true,
 });
 
-console.log('---------------------------');
-console.log(JSON.stringify(statements, null, 2));
-console.log('---------------------------');
+// console.log('---------------------------');
+// console.log(JSON.stringify(statements, null, 2));
+// console.log('---------------------------');
 console.log(printedAst);

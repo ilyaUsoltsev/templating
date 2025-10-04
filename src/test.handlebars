@@ -1,11 +1,3 @@
-<span class="p-2 greeting-primary-{{greetingClass}}" data-user="{{#if isMember}}userMember123{{else}}notMember1232{{/if}}">
-    {{> Button label="Confirm{{#if isMember}} and IF {{/if}}" variant=greetingClass }}
-    <span>Inner span</span>
-    Hello, {{name}}, you="test"!
-    {{#if isMember}}
-        <span>Member @ test</span>
-    {{else}}
-        <span>ELSE member</span>
-    {{/if}}
-
+<span>
+    {{> withbutton label="LABEL123" variant="primary"}}
 </span>
