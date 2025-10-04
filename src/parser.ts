@@ -1,4 +1,11 @@
-import { IfStmt, MustacheStmt, PartialStmt, Stmt, StringStmt } from './ast';
+import {
+  AttributeStmt,
+  IfStmt,
+  MustacheStmt,
+  PartialStmt,
+  Stmt,
+  StringStmt,
+} from './ast';
 import { Token } from './token';
 import { KEYWORDS, TOKEN_TYPE } from './token-types';
 
@@ -30,7 +37,13 @@ class Parser {
     throw new Error(message);
   }
 
-  private getStatement(currentBlock?: 'tag' | 'partial'): Stmt {
+  private getStatement(currentBlock?: 'tag'): Stmt {
+    if (
+      this.match(TOKEN_TYPE.MUSTASHES_OPEN, TOKEN_TYPE.HASH, TOKEN_TYPE.GREATER)
+    ) {
+      return this.slotStatement();
+    }
+
     if (this.match(TOKEN_TYPE.MUSTASHES_OPEN, TOKEN_TYPE.HASH, KEYWORDS.if)) {
       return this.ifStatement();
     }
@@ -40,7 +53,7 @@ class Parser {
     }
 
     if (
-      (currentBlock === 'tag' || currentBlock === 'partial') &&
+      currentBlock === 'tag' &&
       this.match(TOKEN_TYPE.IDENTIFIER, TOKEN_TYPE.EQUAL)
     ) {
       return this.attributeStatement();
@@ -62,11 +75,11 @@ class Parser {
     return this.identifierStatement();
   }
 
-  private partialStatement(): PartialStmt {
-    this.consume(TOKEN_TYPE.WHITESPACE, 'Expect WHITESPACE after {{> ');
-    const partial = this.consume(
+  private slotStatement(): PartialStmt {
+    this.consume(TOKEN_TYPE.WHITESPACE, 'Expect WHITESPACE after {{#> ');
+    const componentToken = this.consume(
       TOKEN_TYPE.IDENTIFIER,
-      'Expecting condition variable'
+      'Expecting slot component name (identifier)'
     );
 
     const attributeStmts = [];
@@ -75,7 +88,65 @@ class Parser {
       !this.check(TOKEN_TYPE.MUSTASHES_CLOSE) &&
       !this.check(TOKEN_TYPE.EOF)
     ) {
-      const statement = this.getStatement('partial');
+      const statement = this.getStatement('tag');
+      if (statement) {
+        attributeStmts.push(statement);
+      }
+    }
+
+    this.consume(
+      TOKEN_TYPE.MUSTASHES_CLOSE,
+      'Expecting }} at the end of a first slot expression'
+    );
+
+    const children: Stmt[] = [];
+    while (!this.check(TOKEN_TYPE.SLOT_CLOSE) && !this.check(TOKEN_TYPE.EOF)) {
+      const statement = this.getStatement();
+      if (statement) {
+        children.push(statement);
+      }
+    }
+
+    this.consume(TOKEN_TYPE.SLOT_CLOSE, 'Expecting {{/ to close slot block');
+    this.consume(TOKEN_TYPE.WHITESPACE, 'Expect WHITESPACE after {{/ ');
+    this.consume(
+      TOKEN_TYPE.IDENTIFIER,
+      'Expecting slot component name (identifier) in closing slot block'
+    );
+    this.consume(TOKEN_TYPE.WHITESPACE, 'Expect WHITESPACE after before }}');
+    this.consume(
+      TOKEN_TYPE.MUSTASHES_CLOSE,
+      'Expecting }} at the end of a closing slot expression'
+    );
+
+    const childrenAttributeStmt: AttributeStmt = {
+      type: 'AttributeStmt',
+      left: { type: 'LiteralStmt', value: 'children' },
+      right: { type: 'ChildrenStmt', children: children },
+    };
+    attributeStmts.push(childrenAttributeStmt);
+
+    return {
+      type: 'PartialStmt',
+      name: componentToken.lexeme,
+      attributes: attributeStmts,
+    };
+  }
+
+  private partialStatement(): PartialStmt {
+    this.consume(TOKEN_TYPE.WHITESPACE, 'Expect WHITESPACE after {{> ');
+    const componentToken = this.consume(
+      TOKEN_TYPE.IDENTIFIER,
+      'Expecting component name (identifier)'
+    );
+
+    const attributeStmts = [];
+
+    while (
+      !this.check(TOKEN_TYPE.MUSTASHES_CLOSE) &&
+      !this.check(TOKEN_TYPE.EOF)
+    ) {
+      const statement = this.getStatement('tag');
       if (statement) {
         attributeStmts.push(statement);
       }
@@ -88,13 +159,12 @@ class Parser {
 
     return {
       type: 'PartialStmt',
-      name: partial.lexeme,
+      name: componentToken.lexeme,
       attributes: attributeStmts,
     };
   }
 
   private mustachesStatement(): MustacheStmt {
-    console.log(this.peek());
     const variableToken = this.consume(
       TOKEN_TYPE.IDENTIFIER,
       "Expect variable name after '{{'."

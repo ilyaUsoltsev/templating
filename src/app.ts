@@ -7,7 +7,11 @@ import { Stmt } from './ast';
 
 const partials = {} as { [key: string]: Stmt[] };
 
-const partialFileNames = ['button.handlebars', 'withbutton.handlebars'];
+const partialFileNames = [
+  'Dialog.handlebars',
+  'Button.handlebars',
+  'Container.handlebars',
+];
 
 for (const fileName of partialFileNames) {
   const partialPath = path.join(__dirname, fileName);
@@ -25,9 +29,9 @@ const fileContent = fs.readFileSync(filePath, 'utf8');
 
 const scanner = new Scanner(fileContent);
 const tokens = scanner.scanTokens();
-// for (const token of tokens) {
-//   console.log(token.toString());
-// }
+for (const token of tokens) {
+  console.log(token.toString());
+}
 
 const parser = new Parser(tokens);
 const statements = parser.parse(tokens);
@@ -42,5 +46,5 @@ const printedAst = ast.print(statements, {
 
 // console.log('---------------------------');
 // console.log(JSON.stringify(statements, null, 2));
-// console.log('---------------------------');
+console.log('---------------------------');
 console.log(printedAst);

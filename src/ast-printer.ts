@@ -23,11 +23,11 @@ class AstPrinter implements Visitor {
   partials: { [key: string]: Stmt[] };
 
   constructor(partials: { [key: string]: Stmt[] }) {
-    this.htmlDocument = '';
     this.partials = partials;
   }
 
   print(statements: Stmt[], ctx?: any): string {
+    this.htmlDocument = '';
     this.ctx = ctx;
     for (const stmt of statements) {
       this.htmlDocument += this.printStmt(stmt);
@@ -66,10 +66,18 @@ class AstPrinter implements Visitor {
     for (const attr of stmt.attributes ?? []) {
       if (attr.type === 'AttributeStmt') {
         const key = attr.left.value;
-        const value =
-          attr.right.type === 'LiteralStmt'
-            ? this.ctx[attr.right.value]
-            : this.printStmt(attr.right);
+        let value: any;
+
+        if (attr.right.type === 'LiteralStmt') {
+          // attribute is a variable passed from context
+          value = this.ctx[attr.right.value];
+        } else if (attr.right.type === 'StringStmt') {
+          // attribute is a string
+          value = this.printStmt(attr.right);
+        } else if (attr.right.type === 'ChildrenStmt') {
+          // children passed to slot component
+          value = this.print(attr.right.children ?? [], partialCtx);
+        }
         partialCtx[key] = value;
       }
     }

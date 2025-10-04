@@ -46,7 +46,11 @@ export class Scanner extends ErrorReporter {
     switch (c) {
       case '{':
         this.addToken(
-          this.match('{') ? TOKEN_TYPE.MUSTASHES_OPEN : TOKEN_TYPE.CURLY_OPEN
+          this.match('{')
+            ? this.match('/')
+              ? TOKEN_TYPE.SLOT_CLOSE
+              : TOKEN_TYPE.MUSTASHES_OPEN
+            : TOKEN_TYPE.CURLY_OPEN
         );
         break;
       case '}':
