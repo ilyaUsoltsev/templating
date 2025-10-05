@@ -14,13 +14,13 @@ export type EachStmt = {
 export type PartialStmt = {
   type: 'PartialStmt';
   name: string;
-  attributes?: AttributeStmt[];
+  attributes?: Stmt[];
 };
 
 export type SlotStmt = {
   type: 'SlotStmt';
   name: string;
-  attributes?: AttributeStmt[];
+  attributes?: Stmt[];
   children: Stmt[];
 };
 
@@ -49,6 +49,12 @@ export type HtmlTagStmt = {
   children?: Stmt[];
 };
 
+export type HtmlSelfClosingTagStmt = {
+  type: 'HtmlSelfClosingTagStmt';
+  tag: string;
+  attributes?: Stmt[];
+};
+
 export type MustacheStmt = {
   type: 'MustacheStmt';
   variable: string;
@@ -57,6 +63,7 @@ export type MustacheStmt = {
 export type Stmt =
   | ProgramStmt
   | HtmlTagStmt
+  | HtmlSelfClosingTagStmt
   | MustacheStmt
   | LiteralStmt
   | AttributeStmt

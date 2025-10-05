@@ -1,7 +1,8 @@
-import {
+import type {
   AttributeStmt,
   EachStmt,
-  IfStmt,
+  HtmlSelfClosingTagStmt,
+  HtmlTagStmt,
   MustacheStmt,
   PartialStmt,
   Stmt,
@@ -38,7 +39,7 @@ class Parser {
     throw new Error(message);
   }
 
-  private getStatement(currentBlock?: 'tag'): Stmt {
+  private getStatement(currentBlock?: 'tag' | 'string'): Stmt {
     if (
       this.match(TOKEN_TYPE.MUSTASHES_OPEN, TOKEN_TYPE.HASH, TOKEN_TYPE.GREATER)
     ) {
@@ -64,7 +65,8 @@ class Parser {
       return this.attributeStatement();
     }
 
-    if (this.match(TOKEN_TYPE.LESS)) {
+    // allow < or > in string statements
+    if (this.match(TOKEN_TYPE.LESS) && currentBlock !== 'string') {
       return this.tagStatement();
     }
 
@@ -118,7 +120,10 @@ class Parser {
       TOKEN_TYPE.IDENTIFIER,
       'Expecting slot component name (identifier) in closing slot block'
     );
-    this.consume(TOKEN_TYPE.WHITESPACE, 'Expect WHITESPACE after before }}');
+    this.consume(
+      TOKEN_TYPE.WHITESPACE,
+      'Expect WHITESPACE before }} in closing slot block'
+    );
     this.consume(
       TOKEN_TYPE.MUSTASHES_CLOSE,
       'Expecting }} at the end of a closing slot expression'
@@ -185,19 +190,38 @@ class Parser {
     };
   }
 
-  private tagStatement(): Stmt {
+  private tagStatement(): HtmlSelfClosingTagStmt | HtmlTagStmt {
     const tagToken = this.consume(
       TOKEN_TYPE.IDENTIFIER,
       "Expect tag name after '<'."
     );
 
-    const statements: Stmt[] = [];
+    const attrStatements: Stmt[] = [];
 
-    while (!this.check(TOKEN_TYPE.GREATER) && !this.check(TOKEN_TYPE.EOF)) {
+    while (
+      !(
+        this.check(TOKEN_TYPE.GREATER) || this.check(TOKEN_TYPE.SELF_CLOSING)
+      ) &&
+      !this.check(TOKEN_TYPE.EOF)
+    ) {
       const statement = this.getStatement('tag');
       if (statement) {
-        statements.push(statement);
+        attrStatements.push(statement);
       }
+    }
+
+    const isSelfClosing = this.check(TOKEN_TYPE.SELF_CLOSING);
+
+    if (isSelfClosing) {
+      this.consume(
+        TOKEN_TYPE.SELF_CLOSING,
+        "Expect '/>' after tag attributes."
+      );
+      return {
+        type: 'HtmlSelfClosingTagStmt',
+        tag: tagToken.lexeme,
+        attributes: attrStatements,
+      };
     }
 
     this.consume(TOKEN_TYPE.GREATER, "Expect '>' after tag name.");
@@ -218,9 +242,9 @@ class Parser {
     this.consume(TOKEN_TYPE.GREATER, "Expect '>' after closing tag name.");
 
     return {
-      type: 'HtmlTagStmt',
+      type: isSelfClosing ? 'HtmlSelfClosingTagStmt' : 'HtmlTagStmt',
       tag: tagToken.lexeme,
-      attributes: statements,
+      attributes: attrStatements,
       children: children,
     };
   }
@@ -229,7 +253,7 @@ class Parser {
     const statements: Stmt[] = [];
 
     while (!this.check(TOKEN_TYPE.STRING) && !this.check(TOKEN_TYPE.EOF)) {
-      const statement = this.getStatement();
+      const statement = this.getStatement('string');
       if (statement) {
         statements.push(statement);
       }
@@ -342,7 +366,10 @@ class Parser {
 
     const trueStatements = [];
     while (
-      !this.check(TOKEN_TYPE.MUSTASHES_OPEN) &&
+      !(
+        this.check(TOKEN_TYPE.MUSTASHES_OPEN, KEYWORDS.else) ||
+        this.check(TOKEN_TYPE.BLOCK_CLOSE, KEYWORDS.if)
+      ) &&
       !this.check(TOKEN_TYPE.EOF)
     ) {
       const statement = this.getStatement();
@@ -351,15 +378,11 @@ class Parser {
       }
     }
 
-    this.consume(
-      TOKEN_TYPE.MUSTASHES_OPEN,
-      'Expect closing or else block in if block'
-    );
-
-    const withElseBlock = this.check(KEYWORDS.else);
+    const withElseBlock = this.check(TOKEN_TYPE.MUSTASHES_OPEN, KEYWORDS.else);
 
     const falseStatements = [];
     if (withElseBlock) {
+      this.consume(TOKEN_TYPE.MUSTASHES_OPEN, 'Expect {{ for else statement');
       this.consume(KEYWORDS.else, 'Expect else keyword');
       this.consume(
         TOKEN_TYPE.MUSTASHES_CLOSE,
@@ -375,10 +398,9 @@ class Parser {
           falseStatements.push(statement);
         }
       }
-
-      this.consume(TOKEN_TYPE.BLOCK_CLOSE, 'Expect closing block in if block');
     }
 
+    this.consume(TOKEN_TYPE.BLOCK_CLOSE, 'Expect closing block in if block');
     this.consume(KEYWORDS.if, 'Expect if keyword in closing if block');
     this.consume(
       TOKEN_TYPE.MUSTASHES_CLOSE,

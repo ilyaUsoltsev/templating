@@ -7,6 +7,7 @@ export const TOKEN_TYPE = {
   LESS: 'LESS', // <
   GREATER: 'GREATER', // >
   TAG_CLOSE: 'TAG_CLOSE', // </
+  SELF_CLOSING: 'SELF_CLOSING', // />
   SLASH: 'SLASH', // /
   IDENTIFIER: 'IDENTIFIER', // variable names, function names, attributes
   STRING: 'STRING', // "string"

@@ -4,12 +4,12 @@ export class ErrorReporter {
     this.hadError = false;
   }
 
-  error(line, message) {
+  error(line: number, message: string) {
     this.report(line, '', message);
     this.hadError = true;
   }
 
-  report(line, where, message) {
+  report(line: number, where: string, message: string) {
     console.error(`[line ${line}] Error${where}: ${message}`);
     this.hadError = true;
   }

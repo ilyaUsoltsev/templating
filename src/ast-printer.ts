@@ -1,6 +1,7 @@
-import {
+import type {
   AttributeStmt,
   EachStmt,
+  HtmlSelfClosingTagStmt,
   HtmlTagStmt,
   IfStmt,
   LiteralStmt,
@@ -19,7 +20,7 @@ interface Visitor {
 }
 
 class AstPrinter implements Visitor {
-  htmlDocument: string;
+  htmlDocument: string = '';
   ctx: any;
   partials: { [key: string]: Stmt[] };
 
@@ -42,6 +43,8 @@ class AstPrinter implements Visitor {
         return this.visitLiteralStmt(stmt);
       case 'HtmlTagStmt':
         return this.visitHtmlTagStmt(stmt);
+      case 'HtmlSelfClosingTagStmt':
+        return this.visitHtmlSelfClosingTagStmt(stmt);
       case 'MustacheStmt':
         return this.visitMustacheStmt(stmt);
       case 'AttributeStmt':
@@ -55,7 +58,7 @@ class AstPrinter implements Visitor {
       case 'EachStmt':
         return this.visitEachStmt(stmt);
       default:
-      // throw new Error(`Unknown statement type: ${stmt.type}`);
+        throw new Error(`Unknown statement type: ${stmt.type}`);
     }
   }
 
@@ -65,7 +68,7 @@ class AstPrinter implements Visitor {
 
   visitEachStmt(stmt: EachStmt): string {
     const iteratorKey = stmt.name;
-    const arrayToIterate = this.ctx[iteratorKey];
+    const arrayToIterate = this.getNestedValue(iteratorKey);
     let result = '';
     for (const item of arrayToIterate) {
       result += this.print(stmt.children, { ...this.ctx, [stmt.alias]: item });
@@ -84,7 +87,7 @@ class AstPrinter implements Visitor {
 
         if (attr.right.type === 'LiteralStmt') {
           // attribute is a variable passed from context
-          value = this.ctx[attr.right.value];
+          value = this.getNestedValue(attr.right.value);
         } else if (attr.right.type === 'StringStmt') {
           // attribute is a string
           value = this.printStmt(attr.right);
@@ -102,28 +105,30 @@ class AstPrinter implements Visitor {
   visitHtmlTagStmt(stmt: HtmlTagStmt): string {
     let result = `<${stmt.tag}`;
 
-    for (const attribute of stmt.attributes) {
+    for (const attribute of stmt?.attributes ?? []) {
       result += this.printStmt(attribute);
     }
     result += '>';
 
-    for (const child of stmt.children) {
+    for (const child of stmt?.children ?? []) {
       result += this.printStmt(child);
     }
     result += `</${stmt.tag}>`;
     return result;
   }
 
-  visitMustacheStmt(stmt: MustacheStmt): string {
-    const nestedKeys = stmt.variable.split('.');
-    let value = this.ctx;
-    for (const key of nestedKeys) {
-      value = value?.[key];
-      if (value === undefined) {
-        return '';
-      }
+  visitHtmlSelfClosingTagStmt(stmt: HtmlSelfClosingTagStmt): string {
+    let result = `<${stmt.tag}`;
+
+    for (const attribute of stmt?.attributes ?? []) {
+      result += this.printStmt(attribute);
     }
-    return value;
+    result += '/>';
+    return result;
+  }
+
+  visitMustacheStmt(stmt: MustacheStmt): string {
+    return this.getNestedValue(stmt.variable);
   }
 
   visitAttributeStmt(stmt: AttributeStmt): string {
@@ -151,11 +156,23 @@ class AstPrinter implements Visitor {
         result += this.printStmt(stmt);
       }
     } else {
-      for (const stmt of ifStmt.elseBranch) {
+      for (const stmt of ifStmt.elseBranch ?? []) {
         result += this.printStmt(stmt);
       }
     }
     return result;
+  }
+
+  private getNestedValue(variable: string): any {
+    const nestedKeys = variable.split('.');
+    let value = this.ctx;
+    for (const key of nestedKeys) {
+      value = value?.[key];
+      if (value === undefined) {
+        value = undefined;
+      }
+    }
+    return value;
   }
 }
 

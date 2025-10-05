@@ -9,7 +9,7 @@ export class Scanner extends ErrorReporter {
   current: number;
   line: number;
 
-  constructor(source) {
+  constructor(source: string) {
     super();
     this.source = source;
     this.current = 0;
@@ -67,7 +67,9 @@ export class Scanner extends ErrorReporter {
         break;
 
       case '/':
-        this.addToken(TOKEN_TYPE.SLASH);
+        this.addToken(
+          this.match('>') ? TOKEN_TYPE.SELF_CLOSING : TOKEN_TYPE.SLASH
+        );
         break;
 
       case '=':
@@ -100,7 +102,7 @@ export class Scanner extends ErrorReporter {
         if (this.isDigit(c)) {
           this.number();
         } else if (this.isAlpha(c)) {
-          this.idenfifier();
+          this.identifier();
         } else {
           this.error(this.line, `Unexpected character: ${c}`);
         }
@@ -112,7 +114,7 @@ export class Scanner extends ErrorReporter {
     return this.source[this.current - 1];
   }
 
-  addToken(type, literal = null) {
+  addToken(type: string, literal = null) {
     const text = this.source.slice(this.start, this.current);
     this.tokens.push(new Token(type, text, literal, this.line));
   }
@@ -121,7 +123,7 @@ export class Scanner extends ErrorReporter {
     return this.current >= this.source.length;
   }
 
-  match(expected) {
+  match(expected: string) {
     if (this.isAtEnd()) return false;
     if (this.source[this.current] !== expected) return false;
 
@@ -130,7 +132,9 @@ export class Scanner extends ErrorReporter {
   }
 
   peek() {
-    if (this.isAtEnd()) return null;
+    if (this.isAtEnd()) {
+      return null;
+    }
     return this.source[this.current];
   }
 
@@ -157,7 +161,10 @@ export class Scanner extends ErrorReporter {
     this.addToken(TOKEN_TYPE.STRING);
   }
 
-  isDigit(c) {
+  isDigit(c: string | null) {
+    if (c === null) {
+      return false;
+    }
     return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(c);
   }
 
@@ -171,22 +178,23 @@ export class Scanner extends ErrorReporter {
         this.advance();
       }
     }
-    const result = parseFloat(this.source.slice(this.start, this.current));
-    const isInt = Number.isInteger(result);
 
-    this.addToken(TOKEN_TYPE.NUMBER, isInt ? result.toFixed(1) : result);
+    this.addToken(TOKEN_TYPE.NUMBER);
   }
 
   peekNext() {
-    if (this.current + 1 >= this.source.length) return null;
+    if (this.current + 1 >= this.source.length) {
+      return null;
+    }
     return this.source[this.current + 1];
   }
 
-  isAlpha(c) {
+  isAlpha(c: string) {
     return (
       (c >= 'a' && c <= 'z') ||
       (c >= 'A' && c <= 'Z') ||
       c == '_' ||
+      c == '+' ||
       c == '-' ||
       c == ',' ||
       c == '.' ||
@@ -198,11 +206,14 @@ export class Scanner extends ErrorReporter {
     );
   }
 
-  isAlphaNumeric(c) {
+  isAlphaNumeric(c: string | null) {
+    if (c === null) {
+      return false;
+    }
     return this.isAlpha(c) || this.isDigit(c);
   }
 
-  idenfifier() {
+  identifier() {
     while (this.isAlphaNumeric(this.peek())) {
       this.advance();
     }
